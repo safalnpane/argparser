@@ -36,6 +36,9 @@ void addArgument(char* name, char* help, ArgumentType type) {
 }
 
 
+
+
+
 void printHelp(void) {
   printf("Usage: %s\n", argparser.name);
   printf("\tARGS\tHELP\n");
