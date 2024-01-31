@@ -5,7 +5,6 @@
 #include "hashtable.h"
 
 
-
 unsigned long hash_function(char* str) {
   unsigned long i = 0;
 
@@ -13,6 +12,17 @@ unsigned long hash_function(char* str) {
     i += str[j];
 
   return i % CAPACITY;
+}
+
+
+HashTableItem* search(HashTable* table, char* key) {
+  int index = hash_function(key);
+  HashTableItem* item = table->items[index];
+
+  if (item != NULL)
+    return item;
+
+  return NULL;
 }
 
 

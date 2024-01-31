@@ -8,6 +8,7 @@ int main(int argc, char* argv[]) {
   addArgument("name", "Your name", SWITCH);
   addArgument("age", "Your name", SWITCH);
   addArgument("bug", "Bug id", FLAG);
-  printHelp();
+  // printHelp();
+  parseArguments();
   return 0;
 }

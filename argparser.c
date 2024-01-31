@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "memory.h"
+#include "hashtable.h"
 #include "argparser.h"
 
 
@@ -20,6 +21,49 @@ void initArgParser(char* name, char* help, int argc, char** argv) {
 }
 
 
+void parseArguments(void) {
+  if (argparser.argc == 1) {
+    printHelp();
+    exit(0);
+  }
+
+  HashTable* table = create_table(20);
+
+  for (int i = 1; i < argparser.argc; i++) {
+    char* currentArg = argparser.argv[i];
+    if (currentArg[0] == '-') {
+      // Could be a switch or a flag
+      if (currentArg[1] == '-') {
+        // It's a flag, get the data after '='
+        char* key = strtok(currentArg + 2, "=");
+        char* value = strtok(NULL, "=");
+        insert(table, key, value);
+      } else {
+        // It's a switch
+        char* key = currentArg + 1;
+        char* value = "true";
+        insert(table, key, value);
+      }
+    }
+  }
+
+  for (int i = 0; i < argparser.count; i++) {
+    Argument argument = argparser.arguments[i];
+    HashTableItem* value = search(table, argument.name);
+    if (value == NULL) {
+      if (argument.type == SWITCH)
+        continue;
+      printf("Argument Error: %s is required\n", argument.name);
+      printHelp();
+      exit(1);
+    }
+    printf("%s: %s\n", argument.name, value->value);
+  }
+
+  free_table(table);
+}
+
+
 void addArgument(char* name, char* help, ArgumentType type) {
   Argument argument;
   strncpy(argument.name, name, ARGPARSER_NAME_MAX_LENGTH);
@@ -34,9 +78,6 @@ void addArgument(char* name, char* help, ArgumentType type) {
   argparser.arguments[argparser.count] = argument;
   argparser.count++;
 }
-
-
-
 
 
 void printHelp(void) {

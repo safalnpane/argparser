@@ -37,6 +37,7 @@ typedef struct {
 
 void initArgParser(char* name, char* help, int argc, char **argv);
 void addArgument(char* name, char* help, ArgumentType type);
+void parseArguments(void);
 void printHelp(void);
 
 
