@@ -85,3 +85,13 @@ void free_table(HashTable* table) {
   free(table->items);
   free(table);
 }
+
+
+void print_table(HashTable* table) {
+  for (int i = 0; i < table->size; i++) {
+    HashTableItem* item = table->items[i];
+
+    if (item != NULL)
+      printf("Key: %s, Value: %s\n", item->key, item->value);
+  }
+}

@@ -21,48 +21,71 @@ void initArgParser(char* name, char* help, int argc, char** argv) {
 }
 
 
-void parseArguments(void) {
+HashTable* parseArguments(void) {
   if (argparser.argc == 1) {
     printHelp();
     exit(0);
   }
 
-  HashTable* table = create_table(20);
+  if (argparser.argc < argparser.requiredArgs + 1) {
+    printf("Argument Error: Not enough arguments\n");
+    printHelp();
+    exit(1);
+  }
 
-  for (int i = 1; i < argparser.argc; i++) {
-    char* currentArg = argparser.argv[i];
-    if (currentArg[0] == '-') {
-      // Could be a switch or a flag
-      if (currentArg[1] == '-') {
-        // It's a flag, get the data after '='
-        char* key = strtok(currentArg + 2, "=");
-        char* value = strtok(NULL, "=");
-        insert(table, key, value);
+  HashTable* table = create_table(20);
+  for (int j = 0; j < argparser.count; j++) {
+    Argument argument = argparser.arguments[j];
+
+    for (int i = 1; i < argparser.argc; i++) {
+      char* currentArg = argparser.argv[i];
+      char* strippedArg = currentArg;
+
+      if (currentArg[0] == '-') {
+        if (currentArg[1] == '-') {
+          // get the value before the '='
+          strippedArg = strtok(currentArg, "=");
+          // strip the '--'
+          strippedArg += 2;
+        } else {
+          strippedArg = currentArg + 1;
+        }
       } else {
-        // It's a switch
-        char* key = currentArg + 1;
-        char* value = "true";
-        insert(table, key, value);
+        if (argument.type == VALUE) {
+          insert(table, argument.name, strippedArg);
+          break;
+        }
+      }
+
+      if (strcmp(strippedArg, argument.name) == 0) {
+        if (argument.type == SWITCH) {
+          insert(table, argument.name, "true");
+          break;
+        } else if (argument.type == FLAG) {
+          // Get the value of the flag
+          char* value = strtok(NULL, "=");
+          if (value == NULL) {
+            printf("Argument Error: %s is required\n", argument.name);
+            printHelp();
+            exit(1);
+          }
+          insert(table, argument.name, value);
+          break;
+        } else {
+          printf("Unknown argument: %s\n", currentArg);
+          break;
+        }
       }
     }
   }
-
-  for (int i = 0; i < argparser.count; i++) {
-    Argument argument = argparser.arguments[i];
-    HashTableItem* value = search(table, argument.name);
-    if (value == NULL) {
-      if (argument.type == SWITCH)
-        continue;
-      printf("Argument Error: %s is required\n", argument.name);
-      printHelp();
-      exit(1);
-    }
-    printf("%s: %s\n", argument.name, value->value);
-  }
-
-  free_table(table);
+  return table;
 }
 
+
+void freeArgParser(HashTable* table) {
+  FREE_ARRAY(Argument, argparser.arguments, argparser.capacity);
+  free_table(table);
+}
 
 void addArgument(char* name, char* help, ArgumentType type) {
   Argument argument;
@@ -77,6 +100,9 @@ void addArgument(char* name, char* help, ArgumentType type) {
 
   argparser.arguments[argparser.count] = argument;
   argparser.count++;
+  if (type == VALUE) {
+    argparser.requiredArgs++;
+  }
 }
 
 

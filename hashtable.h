@@ -22,6 +22,7 @@ void insert(HashTable* table, char* key, char* value);
 HashTableItem* search(HashTable* table, char* key);
 void free_item(HashTableItem* item);
 void free_table(HashTable* table);
+void print_table(HashTable* table);
 
 
 #endif

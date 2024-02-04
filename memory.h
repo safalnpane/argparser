@@ -13,7 +13,7 @@
 
 
 #define FREE_ARRAY(type, pointer, oldCount) \
-  reallocate(pointer, sizeof(type) * (oldCount), 0) 
+  reallocate(pointer, 0) 
 
 
 void* reallocate(void* pointer, size_t newSize);

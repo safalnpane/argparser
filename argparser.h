@@ -1,6 +1,8 @@
 #ifndef argparser_argument_h
 #define argparser_argument_h
 
+#include "hashtable.h"
+
 
 #define ARGPARSER_NAME_MAX_LENGTH 20
 #define ARGPARSER_HELP_MAX_LENGTH 256
@@ -31,14 +33,16 @@ typedef struct {
   int argc;
   int count;
   int capacity;
+  int requiredArgs;
   char **argv;
 } ArgParser;
 
 
 void initArgParser(char* name, char* help, int argc, char **argv);
 void addArgument(char* name, char* help, ArgumentType type);
-void parseArguments(void);
+HashTable* parseArguments(void);
 void printHelp(void);
+void freeArgParser(HashTable* table);
 
 
 #endif
