@@ -59,10 +59,67 @@ void AddArgument(Command* cmd, char* name, char* help, ArgumentType type) {
 }
 
 
+void parseCommand(int count, char** args, Command* cmd) {
+  for (int i = 0; i < cmd->count; i++) {
+    Argument *arg = &cmd->arguments[i];
+
+    for (int j = 0; j < count; j++) {
+      char* currentArg = args[j];
+      char* strippedArg = currentArg;
+
+      if (currentArg[0] == '-') {
+        // flag or switch
+        if (currentArg[1] == '-') {
+          strippedArg = strtok(currentArg, "=");
+          // strip the '--'
+          strippedArg += 2;
+        } else {
+          strippedArg = currentArg + 1;
+        }
+      } else {
+        // value
+        if (arg->type == VALUE) {
+          strncpy(arg->value, currentArg, ARGUMENT_VALUE_MAX_LENGTH);
+          break;
+        }
+      }
+
+      if (strcmp(strippedArg, arg->name) == 0) {
+        if (arg->type == FLAG) {
+          // get the value after the '='
+          strippedArg = strtok(NULL, "=");
+          strncpy(arg->value, strippedArg, ARGUMENT_VALUE_MAX_LENGTH);
+          break;
+        } else if (arg->type == SWITCH) {
+          strncpy(arg->value, "1", ARGUMENT_VALUE_MAX_LENGTH);
+          break;
+        } else {
+          printf("Unknown argument: %s\n", strippedArg);
+          return;
+        }
+      }
+    }
+  }
+}
+
+
 void ParseArgs(int argc, char** argv) {
-  printf("Parsing arguments\n");
-  printf("Argc: %d\n", argc);
-  printf("Argv: %s\n", argv[0]);
+  if (argc == 1 || strcmp(argv[1], "-h") == 0) {
+    PrintHelp();
+    exit(0);
+  }
+
+  if (argparser.count == 1) {
+    // Handle single command
+    parseCommand(argc-1, argv + 1, &argparser.commands[0]);
+    return;
+  }
+
+  // // Handle multiple commands
+  // for (int i = 1; i < argc; i++) {
+  //   for (int j = 0; j < argparser.count; j++) {
+  //   }
+  // }
 }
 
 
@@ -96,5 +153,17 @@ void PrintHelp(void) {
     printf("\nArguments:\n");
     printf("-h\tPrints this help message\n");
     printf("[command] -h Prints help message for the command\n");
+  }
+}
+
+
+void PrintArgs(void) {
+  printf("\n");
+  for (int i = 0; i < argparser.count; i++) {
+    printf("Command: %s\n", argparser.commands[i].name);
+    for (int j = 0; j < argparser.commands[i].count; j++) {
+      printf("Argument: %s\n", argparser.commands[i].arguments[j].name);
+      printf("Value: %s\n", argparser.commands[i].arguments[j].value);
+    }
   }
 }

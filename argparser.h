@@ -67,6 +67,7 @@ Command* CreateCommand(char* name, char* help);
 void AddArgument(Command* cmd, char* name, char* help, ArgumentType type);
 void ParseArgs(int argc, char** argv);
 void PrintHelp(void);
+void PrintArgs(void);
 void FreeArgParser(void);
 
 
