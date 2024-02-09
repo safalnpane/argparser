@@ -73,14 +73,25 @@ void FreeArgParser() {
 
 void PrintHelp(void) {
   int commands = argparser.count;
-  for (int i = 0; i < commands; i++) {
-    printf("Command: %s\n", argparser.commands[i].name);
-    printf("Help: %s\n", argparser.commands[i].help);
-    printf("Arguments: %d\n", argparser.commands[i].count);
-    for (int j = 0; j < argparser.commands[i].count; j++) {
-      printf("  Argument: %s\n", argparser.commands[i].arguments[j].name);
-      printf("  Help: %s\n", argparser.commands[i].arguments[j].help);
-      printf("  Type: %d\n", argparser.commands[i].arguments[j].type);
+  if (commands == 1) {
+    printf("Usage: %s [arguments]\n", argparser.commands[0].name);
+    printf("%s\n", argparser.commands[0].help);
+    printf("\nArguments:\n");
+    for (int i = 0; i < argparser.commands[0].count; i++) {
+      printf("%s\t", argparser.commands[0].arguments[i].name);
+      printf("%s\n", argparser.commands[0].arguments[i].help);
     }
+    return;
+  } else {
+    printf("Usage: %s [command] [arguments]\n", argparser.commands[0].name);
+    printf("%s\n", argparser.commands[0].help);
+    printf("\nCommands:\n");
+    for (int i = 1; i < commands; i++) {
+      printf("%s\t", argparser.commands[i].name);
+      printf("%s\n", argparser.commands[i].help);
+    }
+    printf("\nArguments:\n");
+    printf("-h\tPrints this help message\n");
+    printf("[command] -h Prints help message for the command\n");
   }
 }

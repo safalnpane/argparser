@@ -10,6 +10,10 @@ int main(int argc, char* argv[]) {
   AddArgument(argParser, "age", "person's age", FLAG);
   AddArgument(argParser, "create", "create action", SWITCH);
 
+  Command* anotherCmd = CreateCommand("anotherCmd", "just another command");
+  AddArgument(anotherCmd, "sex", "person's sex", FLAG);
+  AddArgument(anotherCmd, "destroy", "destroy action", SWITCH);
+
   ParseArgs(argc, argv);
   PrintHelp();
 
