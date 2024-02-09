@@ -115,11 +115,13 @@ void ParseArgs(int argc, char** argv) {
     return;
   }
 
-  // // Handle multiple commands
-  // for (int i = 1; i < argc; i++) {
-  //   for (int j = 0; j < argparser.count; j++) {
-  //   }
-  // }
+  // Handle for multiple commands
+  for (int i = 0; i < argparser.count; i++) {
+    if (strcmp(argv[1], argparser.commands[i].name) == 0) {
+      parseCommand(argc-2, argv + 2, &argparser.commands[i]);
+      return;
+    }
+  }
 }
 
 
@@ -160,7 +162,7 @@ void PrintHelp(void) {
 void PrintArgs(void) {
   printf("\n");
   for (int i = 0; i < argparser.count; i++) {
-    printf("Command: %s\n", argparser.commands[i].name);
+    printf("\nCommand: %s\n", argparser.commands[i].name);
     for (int j = 0; j < argparser.commands[i].count; j++) {
       printf("Argument: %s\n", argparser.commands[i].arguments[j].name);
       printf("Value: %s\n", argparser.commands[i].arguments[j].value);
