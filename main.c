@@ -1,25 +1,16 @@
-#include <stdio.h>
-#include <stdlib.h>
 
 #include "argparser.h"
-#include "hashtable.h"
 
 
 int main(int argc, char* argv[]) {
-  initArgParser("argparser", "A simple argument parser",
-                argc, argv);
-  addArgument("name", "Your name", FLAG);
-  addArgument("dbfile", "Database file", VALUE);
-  HashTable* args = parseArguments();
+  InitArgParser();
+  Command* argParser = CreateCommand("argparser", "just an experiment on arg parsing");
+  AddArgument(argParser, "database", "database file", VALUE);
+  AddArgument(argParser, "name", "person's name", FLAG);
+  AddArgument(argParser, "age", "person's age", FLAG);
+  AddArgument(argParser, "create", "create action", SWITCH);
 
-  HashTableItem* name = search(args, "name");
-  HashTableItem* dbfile = search(args, "dbfile");
 
-  if (name != NULL)
-    printf("Hello, %s\n", name->value);
-  if (dbfile != NULL)
-    printf("Using database file: %s\n", dbfile->value);
-
-  freeArgParser(args);
+  FreeArgParser();
   return 0;
 }
