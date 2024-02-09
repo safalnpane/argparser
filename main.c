@@ -10,6 +10,9 @@ int main(int argc, char* argv[]) {
   AddArgument(argParser, "age", "person's age", FLAG);
   AddArgument(argParser, "create", "create action", SWITCH);
 
+  ParseArgs(argc, argv);
+  PrintHelp();
+
 
   FreeArgParser();
   return 0;
