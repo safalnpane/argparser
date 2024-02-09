@@ -67,6 +67,9 @@ void ParseArgs(int argc, char** argv) {
 
 
 void FreeArgParser() {
+  for (int i = 0; i < argparser.count; i++) {
+    FREE_ARRAY(Argument, argparser.commands[i].arguments, argparser.commands[i].capacity);
+  }
   FREE_ARRAY(Argument, argparser.commands, argparser.capacity);
 }
 
