@@ -3,128 +3,180 @@
 #include <stdlib.h>
 
 #include "memory.h"
-#include "hashtable.h"
 #include "argparser.h"
 
 
 ArgParser argparser;
 
 
-void initArgParser(char* name, char* help, int argc, char** argv) {
-  argparser.argc = argc;
-  argparser.argv = argv;
+void InitArgParser() {
   argparser.count = 0;
   argparser.capacity = 0;
-  strncpy(argparser.name, name, ARGPARSER_NAME_MAX_LENGTH);
-  strncpy(argparser.help, help, ARGPARSER_HELP_MAX_LENGTH);
-  argparser.arguments = NULL;
+  argparser.commands = NULL;
 }
 
 
-HashTable* parseArguments(void) {
-  if (argparser.argc == 1) {
-    printHelp();
-    exit(0);
+Command* CreateCommand(char* name, char* help) {
+  Command cmd;
+  strcpy(cmd.name, name);
+  strcpy(cmd.help, help);
+  cmd.count = 0;
+  cmd.capacity = 0;
+  cmd.requiredArgs = 0;
+  cmd.arguments = NULL;
+
+  if (argparser.capacity == argparser.count) {
+    int oldCapacity = argparser.capacity;
+    argparser.capacity = GROW_CAPACITY(oldCapacity);
+    argparser.commands = GROW_ARRAY(Command, argparser.commands, argparser.capacity);
   }
 
-  if (argparser.argc < argparser.requiredArgs + 1) {
-    printf("Argument Error: Not enough arguments\n");
-    printHelp();
-    exit(1);
+  argparser.commands[argparser.count] = cmd;
+  argparser.count++;
+
+  return &argparser.commands[argparser.count - 1];
+}
+
+
+void AddArgument(Command* cmd, char* name, char* help, ArgumentType type) {
+  Argument arg;
+  strcpy(arg.name, name);
+  strcpy(arg.help, help);
+  arg.type = type;
+  arg.value[0] = '\0';
+
+  if (type == VALUE) {
+    cmd->requiredArgs++;
   }
 
-  HashTable* table = create_table(20);
-  for (int j = 0; j < argparser.count; j++) {
-    Argument argument = argparser.arguments[j];
+  if (cmd->capacity == cmd->count) {
+    int oldCapacity = cmd->capacity;
+    cmd->capacity = GROW_CAPACITY(oldCapacity);
+    cmd->arguments = GROW_ARRAY(Argument, cmd->arguments, cmd->capacity);
+  }
 
-    for (int i = 1; i < argparser.argc; i++) {
-      char* currentArg = argparser.argv[i];
-      char* strippedArg = currentArg;
+  cmd->arguments[cmd->count] = arg;
+  cmd->count++;
+}
+
+
+Command* parseCommand(int count, char** args, Command* cmd) {
+  for (int i = 0; i < cmd->count; i++) {
+    Argument *arg = &cmd->arguments[i];
+
+    for (int j = 0; j < count; j++) {
+      char* currentArg = strdup(args[j]);
+      char* strippedArg = NULL;
+      char* value = NULL;
 
       if (currentArg[0] == '-') {
+        // flag or switch
         if (currentArg[1] == '-') {
-          // get the value before the '='
           strippedArg = strtok(currentArg, "=");
+          value = strtok(NULL, "=");
           // strip the '--'
-          strippedArg += 2;
+          strippedArg = strippedArg + 2;
         } else {
           strippedArg = currentArg + 1;
         }
       } else {
-        if (argument.type == VALUE) {
-          insert(table, argument.name, strippedArg);
+        // value
+        if (arg->type == VALUE) {
+          strncpy(arg->value, currentArg, ARGUMENT_VALUE_MAX_LENGTH);
           break;
-        }
+        } else { continue; }
       }
 
-      if (strcmp(strippedArg, argument.name) == 0) {
-        if (argument.type == SWITCH) {
-          insert(table, argument.name, "true");
+      if (strcmp(strippedArg, arg->name) == 0) {
+        if (arg->type == FLAG) {
+          // get the value after the '='
+          strncpy(arg->value, value, ARGUMENT_VALUE_MAX_LENGTH);
           break;
-        } else if (argument.type == FLAG) {
-          // Get the value of the flag
-          char* value = strtok(NULL, "=");
-          if (value == NULL) {
-            printf("Argument Error: %s is required\n", argument.name);
-            printHelp();
-            exit(1);
-          }
-          insert(table, argument.name, value);
-          break;
-        } else {
-          printf("Unknown argument: %s\n", currentArg);
+        } else if (arg->type == SWITCH) {
+          strcpy(arg->value, "1");
           break;
         }
       }
     }
   }
-  return table;
+  return cmd;
 }
 
 
-void freeArgParser(HashTable* table) {
-  FREE_ARRAY(Argument, argparser.arguments, argparser.capacity);
-  free_table(table);
-}
-
-void addArgument(char* name, char* help, ArgumentType type) {
-  Argument argument;
-  strncpy(argument.name, name, ARGPARSER_NAME_MAX_LENGTH);
-  strncpy(argument.help, help, ARGUMENT_HELP_MAX_LENGTH);
-  argument.type = type;
-
-  if (argparser.count == argparser.capacity) {
-    argparser.capacity = GROW_CAPACITY(argparser.capacity);
-    argparser.arguments = GROW_ARRAY(Argument, argparser.arguments, argparser.capacity);
+Command* ParseArgs(int argc, char** argv) {
+  if (argc == 1 || strcmp(argv[1], "-h") == 0) {
+    PrintHelp();
+    exit(0);
   }
 
-  argparser.arguments[argparser.count] = argument;
-  argparser.count++;
-  if (type == VALUE) {
-    argparser.requiredArgs++;
+  if (argparser.count == 1) {
+    // Handle single command
+    return parseCommand(argc-1, argv + 1, &argparser.commands[0]);
   }
-}
 
-
-void printHelp(void) {
-  printf("Usage: %s\n", argparser.name);
-  printf("\tARGS\tHELP\n");
-  printf("\t%s\t%s\n", "-h", "Print this help message");
+  // Handle for multiple commands
   for (int i = 0; i < argparser.count; i++) {
-    Argument argument = argparser.arguments[i];
-    switch (argument.type) {
-      case SWITCH:
-        printf("\t-%s\t%s\n", argument.name, argument.help);
-        break;
-      case FLAG:
-        printf("\t--%s\t%s\n", argument.name, argument.help);
-        break;
-      case VALUE:
-        printf("\t%s\t%s\n", argument.name, argument.help);
-        break;
-      default:
-        printf("Unknown argument type\n");
-        exit(1);
+    if (strcmp(argv[1], argparser.commands[i].name) == 0) {
+      return parseCommand(argc-2, argv + 2, &argparser.commands[i]);
     }
   }
+  return parseCommand(argc - 1, argv + 1, &argparser.commands[0]);
+}
+
+
+char* GetArgValue(Command* cmd, char* name) {
+  for (int i = 0; i < cmd->count; i++) {
+    if (strcmp(cmd->arguments[i].name, name) == 0) {
+      return cmd->arguments[i].value;
+    }
+  }
+  return NULL;
+}
+
+
+void FreeArgParser() {
+  for (int i = 0; i < argparser.count; i++) {
+    FREE_ARRAY(Argument, argparser.commands[i].arguments, argparser.commands[i].capacity);
+  }
+  FREE_ARRAY(Argument, argparser.commands, argparser.capacity);
+}
+
+
+void PrintHelp(void) {
+  int commands = argparser.count;
+  if (commands == 1) {
+    printf("Usage: %s [arguments]\n", argparser.commands[0].name);
+    printf("%s\n", argparser.commands[0].help);
+    printf("\nArguments:\n");
+    for (int i = 0; i < argparser.commands[0].count; i++) {
+      printf("%s\t", argparser.commands[0].arguments[i].name);
+      printf("%s\n", argparser.commands[0].arguments[i].help);
+    }
+    return;
+  } else {
+    printf("Usage: %s [command] [arguments]\n", argparser.commands[0].name);
+    printf("%s\n", argparser.commands[0].help);
+    printf("\nCommands:\n");
+    for (int i = 1; i < commands; i++) {
+      printf("%s\t", argparser.commands[i].name);
+      printf("%s\n", argparser.commands[i].help);
+    }
+    printf("\nArguments:\n");
+    printf("-h\tPrints this help message\n");
+    printf("[command] -h Prints help message for the command\n");
+  }
+}
+
+
+void PrintArgs(void) {
+  printf("\n");
+  for (int i = 0; i < argparser.count; i++) {
+    printf("\nCommand: %s\n", argparser.commands[i].name);
+    for (int j = 0; j < argparser.commands[i].count; j++) {
+      printf("Argument: %s\n", argparser.commands[i].arguments[j].name);
+      printf("Value: %s\n", argparser.commands[i].arguments[j].value);
+    }
+  }
+
+  FreeArgParser();
 }
