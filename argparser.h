@@ -65,7 +65,8 @@ typedef struct {
 void InitArgParser();
 Command* CreateCommand(char* name, char* help);
 void AddArgument(Command* cmd, char* name, char* help, ArgumentType type);
-void ParseArgs(int argc, char** argv);
+Command* ParseArgs(int argc, char** argv);
+char* GetArgValue(Command* cmd, char* name);
 void PrintHelp(void);
 void PrintArgs(void);
 void FreeArgParser(void);
