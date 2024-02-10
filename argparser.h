@@ -1,8 +1,6 @@
 #ifndef argparser_argument_h
 #define argparser_argument_h
 
-#include "hashtable.h"
-
 
 #define ARGPARSER_NAME_MAX_LENGTH 20
 #define ARGPARSER_HELP_MAX_LENGTH 256
